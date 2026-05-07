@@ -1,0 +1,50 @@
+name: GitHub Weekly Trending Report
+
+on:
+  schedule:
+    # 每周一早上 8:00 CST (UTC+8) = 周一凌晨 00:00 UTC
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+    # 支持手动触发
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # 允许推送报告文件回仓库
+
+    steps:
+      - name: Checkout 仓库
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 安装依赖
+        run: pip install -r requirements.txt
+
+      - name: 生成周报
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OUTPUT_DIR: reports
+        run: python3 main.py
+
+      - name: 提交并推送周报
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # 只提交 reports/ 目录中的新文件
+          git add reports/*.md
+
+          if git diff --staged --quiet; then
+            echo "没有新的周报文件，跳过提交"
+            exit 0
+          fi
+
+          git commit -m "📊 自动生成 $(date +%Y-%m-%d) GitHub热点周报"
+          git push
