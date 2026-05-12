@@ -103,8 +103,14 @@ def fetch_trending() -> list[dict]:
         )
         resp.raise_for_status()  # 非 2xx 状态码抛出异常
         data = resp.json()
-    except requests.RequestException:
-        # 网络错误或 API 异常：静默处理，返回空列表
+    except requests.exceptions.Timeout:
+        print(f"[search_new] 请求超时（15秒），请检查网络连接")
+        return []
+    except requests.exceptions.HTTPError as e:
+        print(f"[search_new] API 返回错误: {e.response.status_code} - {e.response.text[:300] if e.response else '无响应体'}")
+        return []
+    except requests.RequestException as e:
+        print(f"[search_new] 请求失败: {e}")
         return []
 
     # 解析搜索结果，提取仓库信息

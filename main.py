@@ -61,11 +61,14 @@ def main():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     load_dotenv(os.path.join(script_dir, ".env"))
 
-    # 输出目录必须在 .env 中配置
+    # 诊断信息：Token 和输出目录状态
+    token = os.getenv("GITHUB_TOKEN", "")
+    print(f"🔑 GITHUB_TOKEN: {'已配置' if token else '未配置，API请求将受限'}")
     output_dir = os.getenv("OUTPUT_DIR", "")
     if not output_dir:
         print("错误：OUTPUT_DIR 未在 .env 中设置，请检查配置文件")
         sys.exit(1)
+    print(f"📁 输出目录: {output_dir}")
 
     # 定义三路数据源及其显示名称
     sources = {
@@ -97,7 +100,13 @@ def main():
     )
 
     if not top10:
-        print("错误：所有数据源均未返回有效数据，请检查网络或 GitHub Token")
+        print("错误：所有数据源均未返回有效数据")
+        # 打印每个数据源的结果数量帮助诊断
+        for name in source_names:
+            count = len(results.get(name, []))
+            print(f"  - {name}: {count} 个仓库")
+        print("可能原因：1) 网络不通  2) GitHub Token 无效或权限不足  3) 本周暂无新仓库")
+        print("请查看上方各数据源的错误日志（如有）定位具体原因")
         sys.exit(1)
 
     # 生成 Obsidian Markdown 并写入文件

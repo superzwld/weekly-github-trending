@@ -86,7 +86,14 @@ def fetch_search_api() -> list[dict]:
         )
         resp.raise_for_status()
         data = resp.json()
-    except requests.RequestException:
+    except requests.exceptions.Timeout:
+        print(f"[search_forks] 请求超时（15秒），请检查网络连接")
+        return []
+    except requests.exceptions.HTTPError as e:
+        print(f"[search_forks] API 返回错误: {e.response.status_code} - {e.response.text[:300] if e.response else '无响应体'}")
+        return []
+    except requests.RequestException as e:
+        print(f"[search_forks] 请求失败: {e}")
         return []
 
     results = []
